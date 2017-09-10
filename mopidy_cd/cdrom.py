@@ -19,9 +19,7 @@ class Cdrom(object):
 
     def refresh(self):
         self.tracks=[]
-
-        self.title = "No Disc" # blank title?
-
+        self.title = None
         try:
             self.disc = discid.read()
         except:
@@ -69,3 +67,4 @@ class Cdrom(object):
             duration = track.seconds
             name = 'Cdrom Track %s (%s)' % (number, time.strftime('%H:%M:%S', time.gmtime (duration)))
             self.tracks.append((number,name,duration))
+            self.title = "Unknown Title"
