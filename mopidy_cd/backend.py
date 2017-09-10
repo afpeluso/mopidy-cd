@@ -15,15 +15,19 @@ class CdBackend(pykka.ThreadingActor, backend.Backend):
         super(CdBackend, self).__init__()
         self.audio = audio
         self.cdrom = cdrom.Cdrom()
-        
+
         self.library = CdLibrary(backend=self)
         self.playback = CdPlaybackProvider(audio=audio, backend=self)
-        
+
 class CdLibrary(backend.LibraryProvider):
-    root_directory = Ref.directory(uri='cd:root', name='Cd')
+
+    def __init__(self, backend):
+        self.backend = backend # be sure to assign it...
+        self.refresh() # refreshes the CD and the title
 
     def browse(self, uri):
         self.refresh()
+
         results = []
         if not uri=='cd:root':
             return results
@@ -36,6 +40,10 @@ class CdLibrary(backend.LibraryProvider):
 
     def refresh(self, uri=None):
         self.backend.cdrom.refresh()
+        if self.backend.cdrom.title is not None:
+            self.root_directory = Ref.directory(uri='cd:root', name='CD: ' + self.backend.cdrom.title)
+        else:
+            self.root_directory = Ref.directory(uri='cd:root', name='CD: No Disc')
 
     def lookup(self, uri):
         logger.debug('Cdrom: track selected')
@@ -45,9 +53,9 @@ class CdLibrary(backend.LibraryProvider):
         return [Track(uri=uri,
                       name=name,
                       length=int(duration)*1000)]
-        
+
 class CdPlaybackProvider(backend.PlaybackProvider):
-    
+
     def change_track(self, track):
         logger.debug('Cdrom: playing track %s', track)
         return super(CdPlaybackProvider, self).change_track(track)
